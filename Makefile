@@ -1,7 +1,7 @@
 ﻿CC=mpicc
 
 pruebas: pruebas.c
-	$(CC) $(CFLAGS) pruebas.c -o pruebas.exe
+	$(CC) pruebas.c -o pruebas.exe
 
 clean:
 	rm *.exe
