@@ -94,9 +94,30 @@ int main(void) {
        C = A * B
        D = C * B
        E = D + C */
+    /* Variables para medir el tiempo */
+    clock_t start, end;
+    double t_mult_AB, t_mult_CB, t_sum;
+
+    /* Medir tiempo para C = A * B */
+    start = clock();
     mult(A, B, C, dim, dim, dim);
+    end = clock();
+    t_mult_AB = ((double)(end - start)) / CLOCKS_PER_SEC;
+    printf("Tiempo de ejecucion de C = A * B: %f segundos\n", t_mult_AB);
+
+    /* Medir tiempo para D = C * B */
+    start = clock();
     mult(C, B, D, dim, dim, dim);
+    end = clock();
+    t_mult_CB = ((double)(end - start)) / CLOCKS_PER_SEC;
+    printf("Tiempo de ejecucion de D = C * B: %f segundos\n", t_mult_CB);
+
+    /* Medir tiempo para E = D + C */
+    start = clock();
     sum_matrix(D, C, E, dim, dim);
+    end = clock();
+    t_sum = ((double)(end - start)) / CLOCKS_PER_SEC;
+    printf("Tiempo de ejecucion de E = D + C: %f segundos\n", t_sum);
 
     /* Imprimir resultados 
     printf("\nMatrix A:\n");
