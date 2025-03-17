@@ -1,3 +1,7 @@
-﻿pruebas: pruebas.c
-	gcc -c pruebas.c -o pruebas.o 
-	gcc -o pruebas pruebas.o
+﻿CC=mpicc
+
+pruebas: pruebas.c
+	$(CC) $(CFLAGS) pruebas.c -o pruebas.exe
+
+clean:
+	rm *.exe

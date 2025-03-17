@@ -130,30 +130,6 @@ int main(int argc, char **argv) {
         printf("Tiempo de ejecucion de E = D + C: %f segundos\n", max_time_sum);
     }
 
-    /* Opcional: reunir resultados para imprimir las matrices si la dimensión es pequeña */
-    double *C = NULL, *D = NULL, *E = NULL;
-    if (rank == 0) {
-        C = (double *)malloc(dim * dim * sizeof(double));
-        D = (double *)malloc(dim * dim * sizeof(double));
-        E = (double *)malloc(dim * dim * sizeof(double));
-    }
-    MPI_Gather(local_C, rows_per_proc * dim, MPI_DOUBLE, C, rows_per_proc * dim, MPI_DOUBLE, 0, MPI_COMM_WORLD);
-    MPI_Gather(local_D, rows_per_proc * dim, MPI_DOUBLE, D, rows_per_proc * dim, MPI_DOUBLE, 0, MPI_COMM_WORLD);
-    MPI_Gather(local_E, rows_per_proc * dim, MPI_DOUBLE, E, rows_per_proc * dim, MPI_DOUBLE, 0, MPI_COMM_WORLD);
-
-    if (rank == 0 && dim <= 10) {
-        printf("\nMatrix A:\n");
-        print_matrix(A, dim, dim);
-        printf("Matrix B:\n");
-        print_matrix(B, dim, dim);
-        printf("Matrix C = A * B:\n");
-        print_matrix(C, dim, dim);
-        printf("Matrix D = C * B:\n");
-        print_matrix(D, dim, dim);
-        printf("Matrix E = D + C:\n");
-        print_matrix(E, dim, dim);
-    }
-
     /* Liberar memoria */
     if (rank == 0) {
         free(A);
