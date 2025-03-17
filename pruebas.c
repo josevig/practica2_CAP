@@ -98,7 +98,7 @@ int main(void) {
     mult(C, B, D, dim, dim, dim);
     sum_matrix(D, C, E, dim, dim);
 
-    /* Imprimir resultados */
+    /* Imprimir resultados 
     printf("\nMatrix A:\n");
     print_matrix(A, dim, dim);
 
@@ -112,7 +112,7 @@ int main(void) {
     print_matrix(D, dim, dim);
 
     printf("Matrix E = D + C:\n");
-    print_matrix(E, dim, dim);
+    print_matrix(E, dim, dim); */
 
     /* Liberar la memoria reservada */
     free(A);
