@@ -6,10 +6,6 @@
 
 /* Inicializa una matriz con valores aleatorios en [0,1) */
 void init_matrix(double *M, int rows, int cols) {
-    if (rows <= 0 || cols <= 0) {
-        printf("Las dimensiones de la matriz deben ser mayores que 0\n");
-        exit(1);
-    }
     for (int i = 0; i < rows; i++)
         for (int j = 0; j < cols; j++)
             M[i * cols + j] = (double)rand() / (double)RAND_MAX;
@@ -31,8 +27,7 @@ void print_matrix(double *M, int rows, int cols) {
     printf("\n");
 }
 
-/* Multiplicación de matrices:
-   C = A * B, donde A es de dimensiones (m x k) y B de (k x n) */
+/* Multiplicación de matrices: C = A * B */
 void mult(double *A, double *B, double *C, int m, int k, int n) {
     for (int i = 0; i < m; i++) {
         for (int j = 0; j < n; j++) {
@@ -85,11 +80,16 @@ int main(int argc, char **argv) {
 
     /* El proceso 0 reserva e inicializa la matriz A completa y la matriz B */
     double *A = NULL;
+    double *C = NULL, *D = NULL, *E = NULL; // Declaración fuera del if para evitar errores
     if (rank == 0) {
         A = (double *)malloc(dim * dim * sizeof(double));
+        C = (double *)malloc(dim * dim * sizeof(double));
+        D = (double *)malloc(dim * dim * sizeof(double));
+        E = (double *)malloc(dim * dim * sizeof(double));
         init_matrix(A, dim, dim);
         init_matrix(B, dim, dim);
     }
+
     /* Distribuye las filas de A entre todos los procesos */
     MPI_Scatter(A, rows_per_proc * dim, MPI_DOUBLE, local_A, rows_per_proc * dim, MPI_DOUBLE, 0, MPI_COMM_WORLD);
     /* Difunde la matriz B a todos los procesos */
@@ -128,6 +128,20 @@ int main(int argc, char **argv) {
         printf("Tiempo de ejecucion de C = A * B: %f segundos\n", max_time_mult1);
         printf("Tiempo de ejecucion de D = C * B: %f segundos\n", max_time_mult2);
         printf("Tiempo de ejecucion de E = D + C: %f segundos\n", max_time_sum);
+    }
+
+    /* Opcional: reunir resultados para imprimir las matrices si la dimensión es pequeña */
+    if (rank == 0 && dim <= 10) {
+        printf("\nMatrix A:\n");
+        print_matrix(A, dim, dim);
+        printf("Matrix B:\n");
+        print_matrix(B, dim, dim);
+        printf("Matrix C = A * B:\n");
+        print_matrix(C, dim, dim);
+        printf("Matrix D = C * B:\n");
+        print_matrix(D, dim, dim);
+        printf("Matrix E = D + C:\n");
+        print_matrix(E, dim, dim);
     }
 
     /* Liberar memoria */
