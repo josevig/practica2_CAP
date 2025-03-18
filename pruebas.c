@@ -80,7 +80,7 @@ int main(int argc, char **argv) {
 
     /* El proceso 0 reserva e inicializa la matriz A completa y la matriz B */
     double *A = NULL;
-    double *C = NULL, *D = NULL, *E = NULL; // Declaración fuera del if para evitar errores
+    double *C = NULL, *D = NULL, *E = NULL;
     if (rank == 0) {
         A = (double *)malloc(dim * dim * sizeof(double));
         C = (double *)malloc(dim * dim * sizeof(double));
@@ -88,6 +88,10 @@ int main(int argc, char **argv) {
         E = (double *)malloc(dim * dim * sizeof(double));
         init_matrix(A, dim, dim);
         init_matrix(B, dim, dim);
+        // Inicializar C, D, E a cero
+        zero_matrix(C, dim, dim);
+        zero_matrix(D, dim, dim);
+        zero_matrix(E, dim, dim);
     }
 
     /* Distribuye las filas de A entre todos los procesos */
@@ -109,20 +113,31 @@ int main(int argc, char **argv) {
     t_end = MPI_Wtime();
     time_mult1 = t_end - t_start;
     MPI_Reduce(&time_mult1, &max_time_mult1, 1, MPI_DOUBLE, MPI_MAX, 0, MPI_COMM_WORLD);
+    // Reunir las partes de C en el proceso 0
+    MPI_Gather(local_C, rows_per_proc * dim, MPI_DOUBLE, C, rows_per_proc * dim, MPI_DOUBLE, 0, MPI_COMM_WORLD);
 
     /* Operación 2: D = C * B */
     t_start = MPI_Wtime();
+    // Distribuir C nuevamente a cada proceso
+    MPI_Scatter(C, rows_per_proc * dim, MPI_DOUBLE, local_C, rows_per_proc * dim, MPI_DOUBLE, 0, MPI_COMM_WORLD);
     mult(local_C, B, local_D, rows_per_proc, dim, dim);
     t_end = MPI_Wtime();
     time_mult2 = t_end - t_start;
     MPI_Reduce(&time_mult2, &max_time_mult2, 1, MPI_DOUBLE, MPI_MAX, 0, MPI_COMM_WORLD);
+    // Reunir las partes de D en el proceso 0
+    MPI_Gather(local_D, rows_per_proc * dim, MPI_DOUBLE, D, rows_per_proc * dim, MPI_DOUBLE, 0, MPI_COMM_WORLD);
 
     /* Operación 3: E = D + C */
     t_start = MPI_Wtime();
+    // Distribuir C y D a cada proceso para la suma local
+    MPI_Scatter(C, rows_per_proc * dim, MPI_DOUBLE, local_C, rows_per_proc * dim, MPI_DOUBLE, 0, MPI_COMM_WORLD);
+    MPI_Scatter(D, rows_per_proc * dim, MPI_DOUBLE, local_D, rows_per_proc * dim, MPI_DOUBLE, 0, MPI_COMM_WORLD);
     sum_matrix(local_D, local_C, local_E, rows_per_proc, dim);
     t_end = MPI_Wtime();
     time_sum = t_end - t_start;
     MPI_Reduce(&time_sum, &max_time_sum, 1, MPI_DOUBLE, MPI_MAX, 0, MPI_COMM_WORLD);
+    // Reunir las partes de E en el proceso 0
+    MPI_Gather(local_E, rows_per_proc * dim, MPI_DOUBLE, E, rows_per_proc * dim, MPI_DOUBLE, 0, MPI_COMM_WORLD);
 
     if (rank == 0) {
         printf("Tiempo de ejecucion de C = A * B: %f segundos\n", max_time_mult1);
