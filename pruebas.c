@@ -48,15 +48,10 @@ void sum_matrix(double *A, double *B, double *C, int rows, int cols) {
 int main(int argc, char **argv) {
     int rank, size, dim;
 
+    dim = atoi(argv[1]);
     MPI_Init(&argc, &argv);
     MPI_Comm_rank(MPI_COMM_WORLD, &rank);
     MPI_Comm_size(MPI_COMM_WORLD, &size);
-
-    /* El proceso 0 solicita la dimensión de la matriz */
-    if (rank == 0) {
-        printf("Ingrese la dimensión de las matrices cuadradas: ");
-        scanf("%d", &dim);
-    }
     /* Difunde la dimensión a todos los procesos */
     MPI_Bcast(&dim, 1, MPI_INT, 0, MPI_COMM_WORLD);
 
@@ -113,31 +108,32 @@ int main(int argc, char **argv) {
     t_end = MPI_Wtime();
     time_mult1 = t_end - t_start;
     MPI_Reduce(&time_mult1, &max_time_mult1, 1, MPI_DOUBLE, MPI_MAX, 0, MPI_COMM_WORLD);
-    // Reunir las partes de C en el proceso 0
-    MPI_Gather(local_C, rows_per_proc * dim, MPI_DOUBLE, C, rows_per_proc * dim, MPI_DOUBLE, 0, MPI_COMM_WORLD);
+    //No hace falta juntar los resultados C debido a que solo utilizamos sus filas, si la siguiente operación se tratase de D = B * C, seria necesario juntar los resultados de C al ser necesario conocer las columnas y distribuir B para cada proceso.
 
     /* Operación 2: D = C * B */
     t_start = MPI_Wtime();
-    // Distribuir C nuevamente a cada proceso
-    MPI_Scatter(C, rows_per_proc * dim, MPI_DOUBLE, local_C, rows_per_proc * dim, MPI_DOUBLE, 0, MPI_COMM_WORLD);
     mult(local_C, B, local_D, rows_per_proc, dim, dim);
     t_end = MPI_Wtime();
     time_mult2 = t_end - t_start;
     MPI_Reduce(&time_mult2, &max_time_mult2, 1, MPI_DOUBLE, MPI_MAX, 0, MPI_COMM_WORLD);
-    // Reunir las partes de D en el proceso 0
-    MPI_Gather(local_D, rows_per_proc * dim, MPI_DOUBLE, D, rows_per_proc * dim, MPI_DOUBLE, 0, MPI_COMM_WORLD);
+    //No hace falta juntar los resultados de D, ya que podemos sumar los valores locales de D y C, para conseguir el valor E local y más adelante juntarlo para generar E. 
 
     /* Operación 3: E = D + C */
+    // Tenemos los valores locales de D y C, podemos sumarlos para obtener los valores locales de E y juntarlos para obtener E.
     t_start = MPI_Wtime();
-    // Distribuir C y D a cada proceso para la suma local
-    MPI_Scatter(C, rows_per_proc * dim, MPI_DOUBLE, local_C, rows_per_proc * dim, MPI_DOUBLE, 0, MPI_COMM_WORLD);
-    MPI_Scatter(D, rows_per_proc * dim, MPI_DOUBLE, local_D, rows_per_proc * dim, MPI_DOUBLE, 0, MPI_COMM_WORLD);
     sum_matrix(local_D, local_C, local_E, rows_per_proc, dim);
     t_end = MPI_Wtime();
     time_sum = t_end - t_start;
     MPI_Reduce(&time_sum, &max_time_sum, 1, MPI_DOUBLE, MPI_MAX, 0, MPI_COMM_WORLD);
     // Reunir las partes de E en el proceso 0
     MPI_Gather(local_E, rows_per_proc * dim, MPI_DOUBLE, E, rows_per_proc * dim, MPI_DOUBLE, 0, MPI_COMM_WORLD);
+
+    if (dim <= 10) {
+        // Reunir los valores locales de C y D para poder imprimir por pantalla la matriz C y D completa.
+        MPI_Gather(local_C, rows_per_proc * dim, MPI_DOUBLE, C, rows_per_proc * dim, MPI_DOUBLE, 0, MPI_COMM_WORLD);
+        MPI_Gather(local_D, rows_per_proc * dim, MPI_DOUBLE, D, rows_per_proc * dim, MPI_DOUBLE, 0, MPI_COMM_WORLD);
+    }
+
 
     if (rank == 0) {
         printf("Tiempo de ejecucion de C = A * B: %f segundos\n", max_time_mult1);
