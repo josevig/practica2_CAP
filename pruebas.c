@@ -139,6 +139,7 @@ int main(int argc, char **argv) {
         printf("Tiempo de ejecucion de C = A * B: %f segundos\n", max_time_mult1);
         printf("Tiempo de ejecucion de D = C * B: %f segundos\n", max_time_mult2);
         printf("Tiempo de ejecucion de E = D + C: %f segundos\n", max_time_sum);
+        printf("Tiempo de ejecucion de E = D + C: %f segundos\n", max_time_mult1+max_time_mult2+max_time_sum);
     }
 
     /* Opcional: reunir resultados para imprimir las matrices si la dimensión es pequeña */
